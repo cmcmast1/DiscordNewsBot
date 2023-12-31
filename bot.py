@@ -1,14 +1,23 @@
+import nextcord
+
 from authtoken import *
-import discord
+from NewsRSS import *
+
+import nextcord as discord
+from nextcord.ext import commands
+from nextcord import Interaction, SlashOption
+
 import logging
 import feedparser
+import random
+from random import randint
 
 
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+client = commands.Bot(command_prefix="!", intents=intents)
 
 # Displays a ready message when bot begins to run
 @client.event
@@ -16,28 +25,55 @@ async def on_ready():
     print(f'{client.user} has begun operation')
     print('------')
 
-# Creates a response message to specific commands
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    match message.content:
-        case '/help':
-            await message.channel.send('Hello ' + f'{message.author}, please consult the following for basic commands:')
-        # Handles posting articles
-        case '/article':
-            # RSS provided by CNN
-            rss = 'http://rss.cnn.com/rss/cnn_latest.rss'
-            feed = feedparser.parse(rss)
+# Creates a slash command to give a list of commands
+@client.slash_command(name="help", description="Receive a list of commands available")
+async def helper(interaction: Interaction):
+    await interaction.response.send_message('Hello ' + f'{interaction.user.display_name}, please consult the following for basic commands:')
 
-            # Obtains the most recent entry
-            latest = feed.entries[0]
-            title = latest.title
-            link = latest.link
+# Creates a slash command to choose between different news outlets
+@client.slash_command(name="article", description="Chose a news outlet to receive the latest article")
+async def article(interaction: Interaction,
+                  outlet: str = SlashOption(
+                      name="outlet",
+                      description="Enter the news outlet",
+                      required=True)):
+    # RSS provided by CNN
+    try:
+        outlet = outlet.lower()
+        feed = feedparser.parse(rss[outlet])
+    except:
+        print("That is not a valid news outlet.")
 
-            # Displays the most recent news article w/ the title and the link
-            await message.channel.send(f"Latest news: {title}\nRead more: {link}")
+    # Obtains the most recent entry
+    latest = feed.entries[0]
+    title = latest.title
+    link = latest.link
+
+    # Displays the most recent news article w/ the title and the link
+    await interaction.response.send_message(f"Latest news: {title}\nRead more: {link}")
+
+# Creates a slash command to generate random articles
+@client.slash_command(name="randomarticle", description="Chooses a random news article")
+async def random_article(interaction: nextcord.Interaction):
+    # Randomly selected outlet
+    outlet = random.choice(list(rss.keys()))
+    feed = feedparser.parse(rss[outlet])
+
+    # Randomly selects an article between the most recent article up to the 20th
+    latest = feed.entries[randint(0, 50)]
+    title = latest.title
+    link = latest.link
+
+    # Displays the most recent news article w/ the title and the link
+    await interaction.response.send_message(f"Latest news: {title}\nRead more: {link}")
+
+
 
 # Creates a log based on previous actions performed by the bot
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-client.run(token, log_handler=handler)
+logger = logging.getLogger('nextcord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='nextcord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
+
+client.run(token)
