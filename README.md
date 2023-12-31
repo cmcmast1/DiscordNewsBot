@@ -9,7 +9,11 @@ In order for the bot to be run on one's own computer. consult a guide on bot cre
 
 # Future Features
 -More news outlets to choose from
+
 -Automatically posts new articles 
+
 -Options to limits which articles will be posted depending on user input
+
 -Options to receive financial/sports/academic articles
+
 -Better UI 
