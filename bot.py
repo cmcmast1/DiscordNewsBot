@@ -37,7 +37,7 @@ async def article(interaction: Interaction,
                       name="outlet",
                       description="Enter the news outlet",
                       required=True)):
-    # RSS provided by CNN
+    # RSS provided by choice
     try:
         outlet = outlet.lower()
         feed = feedparser.parse(rss[outlet])
